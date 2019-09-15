@@ -2,7 +2,8 @@
 #include <LiquidCrystal.h>
 #include <Keypad.h>
 
-
+bool first = false;
+bool two = false;
 float czas=1000000;
 //lcd
 const int rs = 2, en = 3, d4 = 4, d5 = 5, d6 = 6, d7 = 7;
@@ -21,6 +22,7 @@ char keys[rows][cols] = {
   {'6','5','4'},
   {'3','2','1'}
 };
+String ustalonyczas;
 byte rowPins[rows] = {8, 9, 10, 11}; 
 byte colPins[cols] = {12, 13, A0}; 
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, rows, cols );
@@ -29,20 +31,9 @@ char pin_1 = '1';
 char pin_2 = '2';
 char pin_3 = '3';
 char pin_4 = '7';
-
-char b_1 = '1';
-char b_2 = '2';
-char b_3 = '3';
-char b_4 = '4';
-char b_5 = '5';
-char b_6 = '6';
-char b_7 = '7';
-char b_8 = '8';
-char b_9 = '9';
-char b_10 = '*';
-char b_11 = '#';
 Timer timer;
-
+int minuty = 0;
+float czasU = 0;
 void setup() {
   timer.begin(500);
   Serial.begin(9600);
@@ -62,36 +53,24 @@ void loop() {
   switch(stan) {
     case 1:
       if(key) {
+        czas = 60000;
         lcd.setCursor(5,0);
-        lcd.print(key);
-        Serial.print("Key:["+String(key)+"]\n");
-        delay(500);
-        if(key == b_1) {
-            czas = 1*60019;
-        } else if(key == b_2) {
-            czas = 2*60019;
-        } else if(key == b_3) {
-            czas = 3*60019;
-        } else if(key == b_4) {
-            czas = 4*60019;
-        } else if(key == b_5) {
-            czas = 5*60019;
-        } else if(key == b_6) {
-            czas = 6*60019;
-        } else if(key == b_7) {
-            czas = 7*60019;
-        } else if(key == b_8) {
-            czas = 8*60019;
-        } else if(key == b_9) {
-            czas = 9*60019;
-        } else if(key == b_10) {
-            czas = 15*60019;
-        } else if(key == b_11) {
-            czas = 20*60019;
-        } 
-        stan = 3;
+        ustalonyczas = String(key);
+        Serial.print(key);
+        lcd.print(ustalonyczas);
+        stan = 5;
         break;
       }
+      break;
+    case 2:
+        lcd.clear();
+        lcd.setCursor(3,0);
+        lcd.write("Wygranko!");
+        lcd.setCursor(4,1);
+        lcd.write("DOBRZE :D");
+        pinMode(A2, INPUT);
+        delay(5000000);
+        break;
     case 3:
     if (key) {
           
@@ -107,24 +86,19 @@ void loop() {
             lcd.setCursor(7,1);
             lcd.print(key);
             alarm_poz++;         
+            Serial.print(alarm_poz);
           } else if (alarm_poz == 4 && key == pin_4) { 
               lcd.setCursor(8,1);
               lcd.print(key);
-              stan = 2;     
-          } else {
-             stan = 4; 
+              stan = 2;
+              break;
+          } 
+          else{  
+            stan = 4;
           }
-    }
-         break;
-    case 2:
-        lcd.clear();
-        lcd.setCursor(3,0);
-        lcd.write("Wygranko!");
-        lcd.setCursor(4,1);
-        lcd.write("DOBRZE :D");
-        pinMode(A2, INPUT);
-        delay(5000000);
-        break;
+          
+     }
+     break;
     case 4:
         pinMode(A2, OUTPUT);
         digitalWrite(A2, LOW);
@@ -132,22 +106,69 @@ void loop() {
         lcd.setCursor(3,0);
         lcd.write("Przegranko");
         lcd.setCursor(4,1);
-        lcd.write("CIOTY :P");
+        lcd.write("Unlucky");
         delay(5000000);
         break;
-  
+    case 5: 
+          if(key) {
+            lcd.setCursor(6,0);
+            String nowyustalonyczas = ustalonyczas + key;
+            minuty = nowyustalonyczas.toInt() - 1;
+            czasU = minuty;
+            lcd.print(key);
+            Serial.println(nowyustalonyczas);
+            Serial.println(minuty);
+            keypad.waitForKey();
+            stan = 3;
+            break;
+          }
   }
-  if((stan != 4 || stan != 2) && stan != 1) { 
-    lcd.setCursor(5,0);
-    double licznik = (czas/1000)-(millis()/1000);
-    lcd.print(licznik,1);
-    if (licznik <= 0) {
-     stan = 4;
-  }
-  }
-  Serial.print("Czas["+String(czas)+"]\n");
-  Serial.print("Start["+String(start)+"]");
-  
+  if((stan != 4 || stan != 2) && stan != 1 && stan != 5) { 
+    int licznik = 1;
+    int sekundy = ((int(czas/1000))-(int(millis()/1000)));
+    if(minuty > 10)
+    {
+      lcd.setCursor(5,0);
+      lcd.print(minuty);
+    }
+    else {
+      lcd.setCursor(5,0);
+      lcd.print("0");
+      lcd.print(minuty);
+    }
+    lcd.setCursor(7,0);
+    lcd.print(":");
+    if(sekundy >= 10) {
+      lcd.setCursor(8,0);
+      lcd.print(sekundy);
+    }
+    else {
+      lcd.setCursor(8,0);
+      lcd.print("0");
+      lcd.print(sekundy);
+      lcd.print("          ");
+    }
+    if(sekundy == 0 && minuty > 0 ) {
+      minuty--;
+      licznik++;
+      czas = licznik*60000;
+    }
+    else if (minuty == 0) {
+      if(czasU > 0) {
+        licznik++;
+        Serial.print(czasU);
+        czas = licznik*60000;
+      }
+      else if (czasU = 0) {
+        czas = licznik*60000;
+      }
+      minuty = 0;
+    }
+    if (minuty <= 0 && sekundy <= 0) {
+      stan = 4;
+    }
+    
+  }  
   if(stan == 3){
     digitalWrite(A2, LOW); 
     if (timer.available()){
