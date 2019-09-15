@@ -2,27 +2,26 @@
 #include <LiquidCrystal.h>
 #include <Keypad.h>
 
-bool first = false;
-bool two = false;
 float czas=1000000;
-//lcd
+String ustalonyczas;
 const int rs = 2, en = 3, d4 = 4, d5 = 5, d6 = 6, d7 = 7;
 LiquidCrystal lcd(2,3,4,5,6,7);
 int poz = 0;
 int stan = 1;
-int win = 0;
+int licznik = 1;
+
 float start;  
 //Klawiatura
 const byte rows = 4; 
 const byte cols = 3; 
-float dz = 0.001;
+
 char keys[rows][cols] = {
   {'#','0','*'},
   {'9','8','7'},
   {'6','5','4'},
   {'3','2','1'}
 };
-String ustalonyczas;
+
 byte rowPins[rows] = {8, 9, 10, 11}; 
 byte colPins[cols] = {12, 13, A0}; 
 Keypad keypad = Keypad( makeKeymap(keys), rowPins, colPins, rows, cols );
@@ -33,7 +32,7 @@ char pin_3 = '3';
 char pin_4 = '7';
 Timer timer;
 int minuty = 0;
-float czasU = 0;
+int czasU = 0;
 void setup() {
   timer.begin(500);
   Serial.begin(9600);
@@ -124,9 +123,8 @@ void loop() {
           }
   }
   if((stan != 4 || stan != 2) && stan != 1 && stan != 5) { 
-    int licznik = 1;
     int sekundy = ((int(czas/1000))-(int(millis()/1000)));
-    if(minuty > 10)
+    if(minuty >= 10)
     {
       lcd.setCursor(5,0);
       lcd.print(minuty);
@@ -156,19 +154,25 @@ void loop() {
     else if (minuty == 0) {
       if(czasU > 0) {
         licznik++;
-        Serial.print(czasU);
+        Serial.println(czasU);
         czas = licznik*60000;
       }
       else if (czasU = 0) {
         czas = licznik*60000;
       }
-      minuty = 0;
     }
     if (minuty <= 0 && sekundy <= 0) {
       stan = 4;
     }
-    
-  }  
+
+    Serial.println();
+    Serial.print(licznik);
+    Serial.println();
+    Serial.print(minuty);
+    Serial.println();
+    Serial.print(sekundy);
+  }
+  
   if(stan == 3){
     digitalWrite(A2, LOW); 
     if (timer.available()){
